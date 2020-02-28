@@ -12,6 +12,7 @@
 
 #include "slurp.h"
 #include "render.h"
+#include "main.h"
 
 static void noop() {
 	// This space intentionally left blank
@@ -57,6 +58,10 @@ static void pointer_handle_enter(void *data, struct wl_pointer *wl_pointer,
 	seat->pointer_selection.current_output = output;
 
 	move_seat(seat, surface_x, surface_y, &seat->pointer_selection);
+
+	if (seat->state->pre_pressed && seat->button_state != WL_POINTER_BUTTON_STATE_PRESSED) {
+		pointer_handle_button(data, wl_pointer, serial, 0, 0, WL_POINTER_BUTTON_STATE_PRESSED);
+	}
 
 	wl_surface_set_buffer_scale(seat->cursor_surface, output->scale);
 	wl_surface_attach(seat->cursor_surface,
@@ -626,7 +631,8 @@ static const char usage[] =
 	"  -s #rrggbbaa Set selection color.\n"
 	"  -w n         Set border weight.\n"
 	"  -f s         Set output format.\n"
-	"  -p           Select a single point.\n";
+	"  -p           Select a single point.\n"
+	"  -m           Assume mouse is already pressed.\n";
 
 uint32_t parse_color(const char *color) {
 	if (color[0] == '#') {
@@ -702,7 +708,7 @@ int main(int argc, char *argv[]) {
 
 	int opt;
 	char *format = "%x,%y %wx%h";
-	while ((opt = getopt(argc, argv, "hdb:c:s:w:pf:")) != -1) {
+	while ((opt = getopt(argc, argv, "hdb:c:s:w:pmf:")) != -1) {
 		switch (opt) {
 		case 'h':
 			printf("%s", usage);
@@ -734,6 +740,9 @@ int main(int argc, char *argv[]) {
 		}
 		case 'p':
 			state.single_point = true;
+			break;
+		case 'm':
+			state.pre_pressed = true;
 			break;
 		default:
 			printf("%s", usage);
