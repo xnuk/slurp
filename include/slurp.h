@@ -55,6 +55,7 @@ struct slurp_state {
 	uint32_t border_weight;
 	bool display_dimensions;
 	bool single_point;
+	bool pre_pressed;
 	bool restrict_selection;
 	struct wl_list boxes; // slurp_box::link
 	bool fixed_aspect_ratio;

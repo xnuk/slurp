@@ -13,6 +13,7 @@
 
 #include "slurp.h"
 #include "render.h"
+#include "main.h"
 
 #define BG_COLOR 0xFFFFFF40
 #define BORDER_COLOR 0x000000FF
@@ -144,6 +145,10 @@ static void pointer_handle_enter(void *data, struct wl_pointer *wl_pointer,
 	seat->pointer_selection.current_output = output;
 
 	move_seat(seat, surface_x, surface_y, &seat->pointer_selection);
+
+	if (seat->state->pre_pressed && seat->button_state != WL_POINTER_BUTTON_STATE_PRESSED) {
+		pointer_handle_button(data, wl_pointer, serial, 0, 0, WL_POINTER_BUTTON_STATE_PRESSED);
+	}
 
 	switch (seat->button_state) {
 	case WL_POINTER_BUTTON_STATE_RELEASED:
@@ -718,7 +723,8 @@ static const char usage[] =
 	"  -o           Select a display output.\n"
 	"  -p           Select a single point.\n"
 	"  -r           Restrict selection to predefined boxes.\n"
-	"  -a w:h       Force aspect ratio.\n";
+	"  -a w:h       Force aspect ratio.\n"
+	"  -m           Assume mouse is already pressed.\n";
 
 uint32_t parse_color(const char *color) {
 	if (color[0] == '#') {
@@ -893,7 +899,7 @@ int main(int argc, char *argv[]) {
 	char *format = "%x,%y %wx%h\n";
 	bool output_boxes = false;
 	int w, h;
-	while ((opt = getopt(argc, argv, "hdb:c:s:B:w:proa:f:F:")) != -1) {
+	while ((opt = getopt(argc, argv, "hdb:c:s:B:w:proa:f:F:m")) != -1) {
 		switch (opt) {
 		case 'h':
 			printf("%s", usage);
@@ -949,6 +955,9 @@ int main(int argc, char *argv[]) {
 			}
 			state.fixed_aspect_ratio = true;
 			state.aspect_ratio = (double) h / w;
+			break;
+		case 'm':
+			state.pre_pressed = true;
 			break;
 		default:
 			printf("%s", usage);
